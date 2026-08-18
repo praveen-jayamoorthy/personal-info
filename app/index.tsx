@@ -53,7 +53,7 @@ const index = () => {
   if (!user) {
     if (!confirm) {
       return (
-        <SafeAreaView style={{ marginBottom: 30 }}>
+        <SafeAreaView style={{ marginTop: 30 }}>
           <TouchableOpacity
             onPress={() => signInWithPhoneNumber("+919655223771")}
             style={{ borderColor: "red", borderWidth: 1, marginTop: 100 }}
@@ -65,11 +65,11 @@ const index = () => {
     }
 
     return (
-      <SafeAreaView>
+      <SafeAreaView style={{ marginTop: 30 }}>
         <TextInput
           value={code}
           onChangeText={(text) => setCode(text)}
-          style={{ borderColor: "red", borderWidth: 1 , marginTop: 100}}
+          style={{ borderColor: "red", borderWidth: 1, marginTop: 100 }}
         />
         <Button title="Confirm Code" onPress={() => confirmCode()} />
       </SafeAreaView>
@@ -77,7 +77,7 @@ const index = () => {
   }
 
   return (
-    <SafeAreaView>
+    <SafeAreaView style={{ marginTop: 30 }}>
       <Text>Welcome {user.email}</Text>
       <Button title="Sign Out" onPress={() => auth().signOut()} />
     </SafeAreaView>
