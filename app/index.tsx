@@ -1,22 +1,12 @@
-import {
-  View,
-  Text,
-  SafeAreaView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Button, TextInput } from "react-native";
 import auth from "@react-native-firebase/auth";
 import { usePathname, useRouter } from "expo-router";
-import { useAuthStore } from "@/store/authStore";
 
 const index = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuthStore();
-
-  console.log("User: ", user);
 
   const [confirm, setConfirm] = useState(null);
   const [code, setCode] = useState("");
@@ -29,10 +19,8 @@ const index = () => {
   }, [pathname]);
 
   // Handle the button press
-  async function signInWithPhoneNumber(phoneNumber) {
-    console.log("phoneNumber", phoneNumber);
+  async function signInWithPhoneNumber() {
     const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
-    console.log("confirmation", confirmation);
     setConfirm(confirmation);
   }
 

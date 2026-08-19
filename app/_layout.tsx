@@ -57,7 +57,6 @@ const HIDDEN_ROUTES = ["/login"]; // add any other screens here
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { user, initializing, isRegistered, _init } = useAuthStore();
-  console.log(isRegistered);
 
   useEffect(() => {
     return _init();
@@ -69,7 +68,7 @@ function RootLayoutNav() {
     }
 
     if (!user) {
-      router.replace("/login");
+      router.replace("/index");
       return;
     }
 
@@ -84,8 +83,6 @@ function RootLayoutNav() {
   }, [initializing, isRegistered, router, user]);
   const pathname = usePathname();
   const hideHeader = HIDDEN_ROUTES.includes(pathname);
-  console.log("User:", user);
-  console.log("Is Registered:", isRegistered);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
@@ -93,7 +90,7 @@ function RootLayoutNav() {
       <Stack screenOptions={{ headerShown: false }}>
         {user && isRegistered === true && <Stack.Screen name="(tabs)" />}
         {user && isRegistered === false && <Stack.Screen name="register" />}
-        {!user && <Stack.Screen name="login" />}
+        {!user && <Stack.Screen name="index" />}
       </Stack>
 
       <StatusBar style="auto" />

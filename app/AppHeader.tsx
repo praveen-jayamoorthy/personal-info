@@ -6,14 +6,30 @@ import {
   StyleSheet,
   SafeAreaView,
   Pressable,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuthStore } from "@/store/authStore";
+import { router } from "expo-router";
+import auth from "@react-native-firebase/auth";
 
 // Set this to whatever your unread notification count is
 const NOTIFICATION_COUNT = 1;
 
 export default function AppHeader() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { userDetails } = useAuthStore();
+
+  function handleEditProfile() {
+    setIsProfileOpen(false);
+    router.replace("/register");
+  }
+
+  function handleLogout() {
+    setIsProfileOpen(false);
+    auth().signOut();
+    router.replace("/");
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -25,7 +41,9 @@ export default function AppHeader() {
         >
           <View style={styles.avatarWrapper}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>P</Text>
+              <Text style={styles.avatarText}>
+                {userDetails?.displayName?.charAt(0)}
+              </Text>
             </View>
             <View style={styles.avatarBadge}>
               <Ionicons name="checkmark" size={10} color="#fff" />
@@ -42,7 +60,9 @@ export default function AppHeader() {
             <Ionicons name="notifications-outline" size={20} color="#333" />
             {NOTIFICATION_COUNT > 0 && (
               <View style={styles.notificationBadge}>
-                <Text style={styles.notificationText}>{NOTIFICATION_COUNT}</Text>
+                <Text style={styles.notificationText}>
+                  {NOTIFICATION_COUNT}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -53,38 +73,53 @@ export default function AppHeader() {
         </View>
       </View>
 
-      {isProfileOpen && (
+      <Modal
+        visible={isProfileOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsProfileOpen(false)}
+      >
         <Pressable
           style={styles.overlay}
           onPress={() => setIsProfileOpen(false)}
-          android_ripple={{ color: "transparent" }}
         >
           <Pressable onPress={() => undefined} style={styles.profilePopup}>
             <View style={styles.popupHeaderRow}>
               <View style={[styles.avatar, styles.popupAvatar]}>
-                <Text style={styles.avatarText}>P</Text>
+                <Text style={styles.avatarText}>
+                  {userDetails?.displayName?.charAt(0)}{" "}
+                </Text>
               </View>
 
               <View style={styles.popupUserInfo}>
-                <Text style={styles.popupName}>praveen personal</Text>
-                <Text style={styles.popupPhone}>9655223771</Text>
+                <Text style={styles.popupName}>{userDetails?.displayName}</Text>
+                <Text style={styles.popupPhone}>
+                  {userDetails?.phoneNumber}
+                </Text>
               </View>
             </View>
 
-            <TouchableOpacity activeOpacity={0.8} style={styles.editButton}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.editButton}
+              onPress={handleEditProfile}
+            >
               <Ionicons name="create-outline" size={20} color="#1f1f1f" />
               <Text style={styles.editButtonText}>Edit Profile</Text>
             </TouchableOpacity>
 
             <View style={styles.divider} />
-
-            <TouchableOpacity activeOpacity={0.8} style={styles.businessRow}>
-              <Ionicons name="add" size={28} color="#222" />
-              <Text style={styles.businessText}>Create New Business</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.editButton}
+              onPress={handleLogout}
+            >
+              <Ionicons name="log-out-outline" size={20} color="#1f1f1f" />
+              <Text style={styles.editButtonText}>Logout</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>
-      )}
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -166,18 +201,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   overlay: {
-    position: "absolute",
-    top: 70,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
+    paddingTop: 90,
     backgroundColor: "rgba(0, 0, 0, 0.15)",
     justifyContent: "flex-start",
-    zIndex: 10,
   },
+
   profilePopup: {
     backgroundColor: "#fff",
-    marginTop: 10,
     marginHorizontal: 12,
     borderRadius: 18,
     paddingVertical: 18,

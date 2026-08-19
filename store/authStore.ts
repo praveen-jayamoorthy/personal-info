@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import { userDetails } from "./type";
 
 type RegisterProfilePayload = {
   displayName: string;
@@ -13,21 +14,21 @@ type AuthState = {
   user: FirebaseAuthTypes.User | null;
   initializing: boolean;
   isRegistered: boolean | null;
+  userDetails: userDetails | null;
   registerUserProfile: (payload: RegisterProfilePayload) => Promise<void>;
   _init: () => () => void; // returns unsubscribe
 };
 
 async function checkUserRegistration(uid: string) {
-  console.log("Checking registration status for UID:", uid);
   const userDoc = await firestore().collection("users").doc(uid).get();
-  console.log("User document exists:", userDoc.exists);
-  return userDoc.exists;
+  return userDoc;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   initializing: true,
   isRegistered: null,
+  userDetails: null,
 
   registerUserProfile: async (payload) => {
     const { user } = get();
@@ -45,8 +46,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         createdAt: firestore.FieldValue.serverTimestamp(),
         lastSeen: firestore.FieldValue.serverTimestamp(),
       });
-      console.log("User profile registered successfully for:", user.uid);
       set({ isRegistered: true });
+      set({
+        userDetails: {
+          uid: user.uid,
+          displayName: payload.displayName,
+          email: payload.email,
+          photoURL: payload.photoURL || null,
+          phoneNumber: user.phoneNumber || null,
+        },
+      });
     } catch (error) {
       console.error("Failed to register user profile", error);
     }
@@ -55,7 +64,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // Sets up the Firebase auth listener. Call this ONCE at app start.
   _init: () => {
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
-      console.log("Auth state changed. Current user:", firebaseUser);
       set({ user: firebaseUser });
 
       if (!firebaseUser) {
@@ -64,8 +72,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       try {
-        const registered = await checkUserRegistration(firebaseUser.uid);
-        set({ isRegistered: registered });
+        const userDoc = await checkUserRegistration(firebaseUser.uid);
+        set({ isRegistered: userDoc.exists });
+        set({ userDetails: userDoc.data() as userDetails });
       } catch (error) {
         console.error("Failed to verify registration status", error);
         set({ isRegistered: false });

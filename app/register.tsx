@@ -11,15 +11,20 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/authStore";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const isRegistered = useAuthStore((state) => state.isRegistered);
-  const registerUserProfile = useAuthStore((state) => state.registerUserProfile);
-  const [displayName, setDisplayName] = useState(user?.displayName ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
-  const [photoURL, setPhotoURL] = useState(user?.photoURL ?? "");
+  const { userDetails } = useAuthStore();
+  const registerUserProfile = useAuthStore(
+    (state) => state.registerUserProfile,
+  );
+  const [displayName, setDisplayName] = useState(
+    userDetails?.displayName ?? "",
+  );
+  const [email, setEmail] = useState(userDetails?.email ?? "");
+  const [photoURL, setPhotoURL] = useState(userDetails?.photoURL ?? "");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,11 +34,7 @@ export default function RegisterScreen() {
       router.replace("/login");
       return;
     }
-
-    if (isRegistered) {
-      router.replace("/(tabs)");
-    }
-  }, [user, isRegistered, router]);
+  }, [user, router]);
 
   async function handlePhotoPick(source: "library" | "camera") {
     if (!user) {
@@ -111,13 +112,17 @@ export default function RegisterScreen() {
         email: email.trim(),
         photoURL: photoURL.trim() || undefined,
       });
-     // router.replace("/(tabs)");
+      router.replace("/(tabs)");
     } catch (err: any) {
       console.error(err);
       setError(err?.message || "Failed to save profile. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleBackToTabs() {
+    router.replace("/(tabs)");
   }
 
   return (
@@ -129,6 +134,29 @@ export default function RegisterScreen() {
         gap: 12,
       }}
     >
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={handleBackToTabs}
+        style={{
+          position: "absolute",
+          top: 44,
+          left: 16,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: "#fff",
+          justifyContent: "center",
+          alignItems: "center",
+          elevation: 4,
+          shadowColor: "#000",
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+        }}
+        accessibilityLabel="Back to tabs"
+      >
+        <Ionicons name="arrow-back" size={24} color="#222" />
+      </TouchableOpacity>
       <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
         Complete profile
       </Text>
