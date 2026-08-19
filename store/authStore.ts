@@ -1,8 +1,7 @@
 // store/authStore.ts
 import { create } from "zustand";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 
 type RegisterProfilePayload = {
   displayName: string;
@@ -11,7 +10,7 @@ type RegisterProfilePayload = {
 };
 
 type AuthState = {
-  user: User | null;
+  user: FirebaseAuthTypes.User | null;
   initializing: boolean;
   isRegistered: boolean | null;
   registerUserProfile: (payload: RegisterProfilePayload) => Promise<void>;
@@ -19,8 +18,10 @@ type AuthState = {
 };
 
 async function checkUserRegistration(uid: string) {
-  const userDoc = await getDoc(doc(db, "users", uid));
-  return userDoc.exists();
+  console.log("Checking registration status for UID:", uid);
+  const userDoc = await firestore().collection("users").doc(uid).get();
+  console.log("User document exists:", userDoc.exists);
+  return userDoc.exists;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -34,16 +35,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new Error("No authenticated user available.");
     }
     try {
-      console.log("Registering user profile for:", user.uid, payload);
-      const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, {
+      const userRef = firestore().collection("users").doc(user.uid);
+      await userRef.set({
         uid: user.uid,
         displayName: payload.displayName,
         email: payload.email,
         photoURL: payload.photoURL || null,
         phoneNumber: user.phoneNumber || null,
-        createdAt: serverTimestamp(),
-        lastSeen: serverTimestamp(),
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        lastSeen: firestore.FieldValue.serverTimestamp(),
       });
       console.log("User profile registered successfully for:", user.uid);
       set({ isRegistered: true });
@@ -54,7 +54,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // Sets up the Firebase auth listener. Call this ONCE at app start.
   _init: () => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
+      console.log("Auth state changed. Current user:", firebaseUser);
       set({ user: firebaseUser });
 
       if (!firebaseUser) {

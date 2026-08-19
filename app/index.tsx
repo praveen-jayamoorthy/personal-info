@@ -1,32 +1,28 @@
-import { View, Text, SafeAreaView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import React, { useState, useEffect } from "react";
 import { Button, TextInput } from "react-native";
 import auth from "@react-native-firebase/auth";
 import { usePathname, useRouter } from "expo-router";
+import { useAuthStore } from "@/store/authStore";
 
 const index = () => {
   const pathname = usePathname();
   const router = useRouter();
-  console.log("auth", auth().currentUser);
-  useEffect(() => {
-    console.log("auth", auth().currentUser);
-  }, []);
+  const { user } = useAuthStore();
 
-  const [initializing, setInitializing] = useState(true);
-  const [user, setUser] = useState();
+  console.log("User: ", user);
+
   const [confirm, setConfirm] = useState(null);
   const [code, setCode] = useState("");
-
-  // Handle user state changes
-  function onAuthStateChanged(user) {
-    setUser(user);
-    if (initializing) setInitializing(false);
-  }
-
-  useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-    return subscriber; // unsubscribe on unmount
-  }, []);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (pathname == "/firebaseauth/link") router.back();
@@ -41,46 +37,98 @@ const index = () => {
   }
 
   async function confirmCode() {
+    if (!confirm) return;
+    setError("");
+    setLoading(true);
     try {
-      await confirm.confirm(code);
-    } catch (error) {
-      console.log("Invalid code.");
+      await confirm.confirm(code.trim());
+    } catch (e: any) {
+      setError("Invalid code, try again");
+    } finally {
+      setLoading(false);
     }
-  }
-
-  if (initializing) return null;
-
-  if (!user) {
-    if (!confirm) {
-      return (
-        <SafeAreaView style={{ marginTop: 30 }}>
-          <TouchableOpacity
-            onPress={() => signInWithPhoneNumber("+919655223771")}
-            style={{ borderColor: "red", borderWidth: 1, marginTop: 100 }}
-          >
-            <Text>Sign In</Text>
-          </TouchableOpacity>
-        </SafeAreaView>
-      );
-    }
-
-    return (
-      <SafeAreaView style={{ marginTop: 30 }}>
-        <TextInput
-          value={code}
-          onChangeText={(text) => setCode(text)}
-          style={{ borderColor: "red", borderWidth: 1, marginTop: 100 }}
-        />
-        <Button title="Confirm Code" onPress={() => confirmCode()} />
-      </SafeAreaView>
-    );
   }
 
   return (
-    <SafeAreaView style={{ marginTop: 30 }}>
-      <Text>Welcome {user.email}</Text>
-      <Button title="Sign Out" onPress={() => auth().signOut()} />
-    </SafeAreaView>
+    <View
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100%",
+        paddingHorizontal: 24,
+        gap: 12,
+      }}
+    >
+      {!confirm ? (
+        <>
+          <TextInput
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            placeholder="+91 00000 00000"
+            keyboardType="phone-pad"
+            style={{
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 8,
+              padding: 12,
+              width: "100%",
+            }}
+          />
+          <TouchableOpacity
+            onPress={signInWithPhoneNumber}
+            disabled={loading}
+            style={{
+              backgroundColor: "#000",
+              paddingVertical: 12,
+              borderRadius: 8,
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff" }}>Send code</Text>
+            )}
+          </TouchableOpacity>
+        </>
+      ) : (
+        <>
+          <TextInput
+            value={code}
+            onChangeText={setCode}
+            placeholder="Enter 6-digit code"
+            keyboardType="number-pad"
+            style={{
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 8,
+              padding: 12,
+              width: "100%",
+            }}
+          />
+          <TouchableOpacity
+            onPress={confirmCode}
+            disabled={loading}
+            style={{
+              backgroundColor: "#000",
+              paddingVertical: 12,
+              borderRadius: 8,
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff" }}>Verify code</Text>
+            )}
+          </TouchableOpacity>
+        </>
+      )}
+
+      {!!error && <Text style={{ color: "red" }}>{error}</Text>}
+    </View>
   );
 };
 

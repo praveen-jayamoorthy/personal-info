@@ -31,7 +31,7 @@ export default function RegisterScreen() {
     }
 
     if (isRegistered) {
-      router.replace("/");
+      router.replace("/(tabs)");
     }
   }, [user, isRegistered, router]);
 
@@ -111,7 +111,7 @@ export default function RegisterScreen() {
         email: email.trim(),
         photoURL: photoURL.trim() || undefined,
       });
-      router.replace("/");
+     // router.replace("/(tabs)");
     } catch (err: any) {
       console.error(err);
       setError(err?.message || "Failed to save profile. Please try again.");

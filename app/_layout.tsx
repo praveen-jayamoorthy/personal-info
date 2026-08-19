@@ -5,7 +5,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { router, Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
@@ -13,6 +13,7 @@ import "react-native-reanimated";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useAuthStore } from "@/store/authStore";
 import { StatusBar } from "expo-status-bar";
+import AppHeader from "./AppHeader";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -51,12 +52,44 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+const HIDDEN_ROUTES = ["/login"]; // add any other screens here
+
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { user, initializing, isRegistered } = useAuthStore();
+  const { user, initializing, isRegistered, _init } = useAuthStore();
+  console.log(isRegistered);
+
+  useEffect(() => {
+    return _init();
+  }, [_init]);
+
+  useEffect(() => {
+    if (initializing) {
+      return;
+    }
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (isRegistered === false) {
+      router.replace("/register");
+      return;
+    }
+
+    if (isRegistered === true) {
+      router.replace("/(tabs)");
+    }
+  }, [initializing, isRegistered, router, user]);
+  const pathname = usePathname();
+  const hideHeader = HIDDEN_ROUTES.includes(pathname);
+  console.log("User:", user);
+  console.log("Is Registered:", isRegistered);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      {<AppHeader />}
       <Stack screenOptions={{ headerShown: false }}>
         {user && isRegistered === true && <Stack.Screen name="(tabs)" />}
         {user && isRegistered === false && <Stack.Screen name="register" />}
