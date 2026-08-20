@@ -1,10 +1,9 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput } from "react-native";
 import React, { useState, useEffect } from "react";
-import { Button, TextInput } from "react-native";
 import auth from "@react-native-firebase/auth";
 import { usePathname, useRouter } from "expo-router";
 
-const index = () => {
+const Login = () => {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -15,7 +14,7 @@ const index = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (pathname == "/firebaseauth/link") router.back();
+    if (pathname === "/firebaseauth/link") router.back();
   }, [pathname]);
 
   // Handle the button press
@@ -30,7 +29,7 @@ const index = () => {
     setLoading(true);
     try {
       await confirm.confirm(code.trim());
-    } catch (e: any) {
+    } catch (_e: any) {
       setError("Invalid code, try again");
     } finally {
       setLoading(false);
@@ -120,4 +119,4 @@ const index = () => {
   );
 };
 
-export default index;
+export default Login;

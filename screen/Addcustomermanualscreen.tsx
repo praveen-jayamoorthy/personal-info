@@ -73,10 +73,7 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
 // ---- Header ----
 const Header: React.FC<{ onBack: () => void }> = ({ onBack }) => (
   <View style={styles.header}>
-    <TouchableOpacity
-      onPress={onBack}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
+    <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       <Icon name="arrow-left" size={22} color="#1A1A1A" />
     </TouchableOpacity>
     <Text style={styles.headerTitle}>Add Customer By Yourself</Text>
@@ -126,24 +123,13 @@ const AddCustomerManualScreen: React.FC<Props> = ({ navigation, route }) => {
             optionalLabel
           />
 
-          <TouchableOpacity
-            style={styles.contactsLink}
-            onPress={handleAddFromContacts}
-          >
-            <MaterialIcon
-              name="card-account-phone-outline"
-              size={20}
-              color="#2E7D32"
-            />
+          <TouchableOpacity style={styles.contactsLink} onPress={handleAddFromContacts}>
+            <MaterialIcon name="card-account-phone-outline" size={20} color="#2E7D32" />
             <Text style={styles.contactsLinkText}>Add from contacts</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.confirmBtn}
-          activeOpacity={0.85}
-          onPress={handleConfirm}
-        >
+        <TouchableOpacity style={styles.confirmBtn} activeOpacity={0.85} onPress={handleConfirm}>
           <Text style={styles.confirmBtnText}>Confirm</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>

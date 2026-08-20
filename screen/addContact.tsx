@@ -47,9 +47,7 @@ const Avatar = ({ contact }) => {
           },
         ]}
       >
-        <Text style={styles.avatarInitial}>
-          {contact.name.charAt(0).toUpperCase()}
-        </Text>
+        <Text style={styles.avatarInitial}>{contact.name.charAt(0).toUpperCase()}</Text>
       </View>
     );
   }
@@ -62,11 +60,7 @@ const Avatar = ({ contact }) => {
 
 // ---- Contact Row ----
 const ContactRow = ({ item, onPress }) => (
-  <TouchableOpacity
-    style={styles.row}
-    activeOpacity={0.6}
-    onPress={() => onPress(item)}
-  >
+  <TouchableOpacity style={styles.row} activeOpacity={0.6} onPress={() => onPress(item)}>
     <Avatar contact={item} />
     <View style={styles.rowContent}>
       <View style={styles.nameRow}>
@@ -74,12 +68,7 @@ const ContactRow = ({ item, onPress }) => (
           {item.name}
         </Text>
         {item.warning && (
-          <MaterialIcon
-            name="alert"
-            size={15}
-            color="#F5A623"
-            style={{ marginLeft: 6 }}
-          />
+          <MaterialIcon name="alert" size={15} color="#F5A623" style={{ marginLeft: 6 }} />
         )}
       </View>
       {!!item.phone && <Text style={styles.phone}>{item.phone}</Text>}
@@ -90,17 +79,11 @@ const ContactRow = ({ item, onPress }) => (
 // ---- Header ----
 const Header = ({ onBack, onSearch }) => (
   <View style={styles.header}>
-    <TouchableOpacity
-      onPress={onBack}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
+    <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       <Icon name="arrow-left" size={22} color="#1A1A1A" />
     </TouchableOpacity>
     <Text style={styles.headerTitle}>Add Customer</Text>
-    <TouchableOpacity
-      onPress={onSearch}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
+    <TouchableOpacity onPress={onSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       <Icon name="search" size={20} color="#1A1A1A" />
     </TouchableOpacity>
   </View>
@@ -115,9 +98,7 @@ export default function AddCustomerScreen({ navigation }) {
   const [saveMessage, setSaveMessage] = useState<string>("");
   const { user } = useAuth();
   const filteredContacts = contacts.filter(
-    (c) =>
-      c.name.toLowerCase().includes(query.toLowerCase()) ||
-      c.phone.includes(query),
+    (c) => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query),
   );
 
   useEffect(() => {
@@ -158,19 +139,11 @@ export default function AddCustomerScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <Header
-        onBack={() => navigation?.goBack()}
-        onSearch={() => setSearchVisible((v) => !v)}
-      />
+      <Header onBack={() => navigation?.goBack()} onSearch={() => setSearchVisible((v) => !v)} />
 
       {searchVisible && (
         <View style={styles.searchBar}>
-          <Icon
-            name="search"
-            size={16}
-            color="#999"
-            style={{ marginRight: 8 }}
-          />
+          <Icon name="search" size={16} color="#999" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search contacts"
@@ -194,19 +167,13 @@ export default function AddCustomerScreen({ navigation }) {
       <FlatList
         data={filteredContacts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ContactRow item={item} onPress={handleSelectContact} />
-        )}
+        renderItem={({ item }) => <ContactRow item={item} onPress={handleSelectContact} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       />
 
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.85}
-        onPress={handleAddManually}
-      >
+      <TouchableOpacity style={styles.fab} activeOpacity={0.85} onPress={handleAddManually}>
         <Icon name="user-plus" size={18} color="#FFFFFF" />
         <Text style={styles.fabText}>Add Manually</Text>
       </TouchableOpacity>

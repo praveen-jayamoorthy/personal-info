@@ -41,9 +41,7 @@ export default function AppHeader() {
         >
           <View style={styles.avatarWrapper}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {userDetails?.displayName?.charAt(0)}
-              </Text>
+              <Text style={styles.avatarText}>{userDetails?.displayName?.charAt(0)}</Text>
             </View>
             <View style={styles.avatarBadge}>
               <Ionicons name="checkmark" size={10} color="#fff" />
@@ -60,9 +58,7 @@ export default function AppHeader() {
             <Ionicons name="notifications-outline" size={20} color="#333" />
             {NOTIFICATION_COUNT > 0 && (
               <View style={styles.notificationBadge}>
-                <Text style={styles.notificationText}>
-                  {NOTIFICATION_COUNT}
-                </Text>
+                <Text style={styles.notificationText}>{NOTIFICATION_COUNT}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -79,23 +75,16 @@ export default function AppHeader() {
         animationType="fade"
         onRequestClose={() => setIsProfileOpen(false)}
       >
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setIsProfileOpen(false)}
-        >
+        <Pressable style={styles.overlay} onPress={() => setIsProfileOpen(false)}>
           <Pressable onPress={() => undefined} style={styles.profilePopup}>
             <View style={styles.popupHeaderRow}>
               <View style={[styles.avatar, styles.popupAvatar]}>
-                <Text style={styles.avatarText}>
-                  {userDetails?.displayName?.charAt(0)}{" "}
-                </Text>
+                <Text style={styles.avatarText}>{userDetails?.displayName?.charAt(0)} </Text>
               </View>
 
               <View style={styles.popupUserInfo}>
                 <Text style={styles.popupName}>{userDetails?.displayName}</Text>
-                <Text style={styles.popupPhone}>
-                  {userDetails?.phoneNumber}
-                </Text>
+                <Text style={styles.popupPhone}>{userDetails?.phoneNumber}</Text>
               </View>
             </View>
 
@@ -109,11 +98,7 @@ export default function AppHeader() {
             </TouchableOpacity>
 
             <View style={styles.divider} />
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.editButton}
-              onPress={handleLogout}
-            >
+            <TouchableOpacity activeOpacity={0.8} style={styles.editButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color="#1f1f1f" />
               <Text style={styles.editButtonText}>Logout</Text>
             </TouchableOpacity>

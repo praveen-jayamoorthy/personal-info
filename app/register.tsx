@@ -17,12 +17,8 @@ export default function RegisterScreen() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { userDetails } = useAuthStore();
-  const registerUserProfile = useAuthStore(
-    (state) => state.registerUserProfile,
-  );
-  const [displayName, setDisplayName] = useState(
-    userDetails?.displayName ?? "",
-  );
+  const registerUserProfile = useAuthStore((state) => state.registerUserProfile);
+  const [displayName, setDisplayName] = useState(userDetails?.displayName ?? "");
   const [email, setEmail] = useState(userDetails?.email ?? "");
   const [photoURL, setPhotoURL] = useState(userDetails?.photoURL ?? "");
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -74,10 +70,7 @@ export default function RegisterScreen() {
             });
 
       if (result.canceled || !result.assets?.[0]?.base64) {
-        Alert.alert(
-          "Photo not selected",
-          "We could not read the selected image.",
-        );
+        Alert.alert("Photo not selected", "We could not read the selected image.");
         return;
       }
 
@@ -88,10 +81,7 @@ export default function RegisterScreen() {
       setPhotoURL(base64Image);
     } catch (err: any) {
       console.error(err);
-      Alert.alert(
-        "Photo upload failed",
-        err?.message || "Unable to upload your photo.",
-      );
+      Alert.alert("Photo upload failed", err?.message || "Unable to upload your photo.");
     } finally {
       setUploadingPhoto(false);
     }
@@ -157,9 +147,7 @@ export default function RegisterScreen() {
       >
         <Ionicons name="arrow-back" size={24} color="#222" />
       </TouchableOpacity>
-      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>
-        Complete profile
-      </Text>
+      <Text style={{ fontSize: 24, fontWeight: "700", marginBottom: 16 }}>Complete profile</Text>
 
       <View style={{ width: "100%" }}>
         <Text style={{ marginBottom: 6, fontWeight: "600" }}>Name</Text>
@@ -197,9 +185,7 @@ export default function RegisterScreen() {
       </View>
 
       <View style={{ width: "100%" }}>
-        <Text style={{ marginBottom: 8, fontWeight: "600" }}>
-          Profile photo
-        </Text>
+        <Text style={{ marginBottom: 8, fontWeight: "600" }}>Profile photo</Text>
 
         {photoURL ? (
           <Image
@@ -243,11 +229,7 @@ export default function RegisterScreen() {
             alignItems: "center",
           }}
         >
-          {uploadingPhoto ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text>Upload photo</Text>
-          )}
+          {uploadingPhoto ? <ActivityIndicator color="#000" /> : <Text>Upload photo</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity

@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-} from "react-native";
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { router } from "expo-router";
@@ -74,12 +67,7 @@ const AccountRow = ({ item }) => {
       <View style={styles.rowContent}>
         <Text style={styles.name}>{item.name}</Text>
         <View style={styles.subtitleRow}>
-          <Ionicons
-            name={item.subtitleIcon}
-            size={12}
-            color="#8A8A8A"
-            style={{ marginRight: 4 }}
-          />
+          <Ionicons name={item.subtitleIcon} size={12} color="#8A8A8A" style={{ marginRight: 4 }} />
           <Text style={styles.subtitle} numberOfLines={1}>
             {item.subtitle}
           </Text>
@@ -102,12 +90,7 @@ const NetBalanceCard = ({ total, count }) => (
     <View>
       <Text style={styles.balanceLabel}>Net Balance</Text>
       <View style={styles.subtitleRow}>
-        <Ionicons
-          name="user"
-          size={13}
-          color="#666"
-          style={{ marginRight: 4 }}
-        />
+        <Ionicons name="user" size={13} color="#666" style={{ marginRight: 4 }} />
         <Text style={styles.accountsCount}>{count} Accounts</Text>
       </View>
     </View>
@@ -141,10 +124,7 @@ export default function LedgerScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => router.push("/screen/addContact")}
-      >
+      <TouchableOpacity style={styles.addButton} onPress={() => router.push("/screen/addContact")}>
         <Text style={styles.addButtonText}>Add</Text>
       </TouchableOpacity>
     </SafeAreaView>

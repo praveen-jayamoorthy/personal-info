@@ -1,9 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { router, Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -80,13 +76,13 @@ function RootLayoutNav() {
     if (isRegistered === true) {
       router.replace("/(tabs)");
     }
-  }, [initializing, isRegistered, router, user]);
+  }, [initializing, isRegistered, user]);
   const pathname = usePathname();
   const hideHeader = HIDDEN_ROUTES.includes(pathname);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      {<AppHeader />}
+      {hideHeader && <AppHeader />}
       <Stack screenOptions={{ headerShown: false }}>
         {user && isRegistered === true && <Stack.Screen name="(tabs)" />}
         {user && isRegistered === false && <Stack.Screen name="register" />}
