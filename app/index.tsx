@@ -15,7 +15,7 @@ const Login = () => {
 
   useEffect(() => {
     if (pathname === "/firebaseauth/link") router.back();
-  }, [pathname]);
+  }, [pathname, router]);
 
   // Handle the button press
   async function signInWithPhoneNumber() {
@@ -29,8 +29,9 @@ const Login = () => {
     setLoading(true);
     try {
       await confirm.confirm(code.trim());
-    } catch (_e: any) {
+    } catch (e: any) {
       setError("Invalid code, try again");
+      console.error(e);
     } finally {
       setLoading(false);
     }

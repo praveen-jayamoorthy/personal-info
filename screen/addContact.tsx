@@ -9,12 +9,27 @@ import {
   TextInput,
   StatusBar,
 } from "react-native";
-import Icon from "react-native-vector-icons/Feather";
-import MaterialIcon from "react-native-vector-icons/MaterialCommunityIcons";
 import * as Contacts from "expo-contacts";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { db } from "../../firebase";
-import { useAuth } from "@/contexts/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+
+type ContactListItem = {
+  id: string;
+  name: string;
+  phone: string;
+  image: boolean;
+  color: string;
+  warning: boolean;
+};
+
+type HeaderProps = {
+  onBack: () => void;
+  onSearch: () => void;
+};
+
+type ContactRowProps = {
+  item: ContactListItem;
+  onPress: (contact: ContactListItem) => void;
+};
 
 /* // ---- Mock Data ----
 const contacts = [
@@ -33,7 +48,7 @@ const contacts = [
 ]; */
 
 // ---- Avatar ----
-const Avatar = ({ contact }) => {
+const Avatar = ({ contact }: { contact: ContactListItem }) => {
   if (contact.image) {
     // Replace with <Image source={{ uri: contact.imageUrl }} style={styles.avatarImg} />
     return (
@@ -53,13 +68,13 @@ const Avatar = ({ contact }) => {
   }
   return (
     <View style={styles.avatarPlaceholder}>
-      <Icon name="user" size={22} color="#FFFFFF" />
+      <Ionicons name="person-outline" size={22} color="#FFFFFF" />
     </View>
   );
 };
 
 // ---- Contact Row ----
-const ContactRow = ({ item, onPress }) => (
+const ContactRow = ({ item, onPress }: ContactRowProps) => (
   <TouchableOpacity style={styles.row} activeOpacity={0.6} onPress={() => onPress(item)}>
     <Avatar contact={item} />
     <View style={styles.rowContent}>
@@ -68,7 +83,7 @@ const ContactRow = ({ item, onPress }) => (
           {item.name}
         </Text>
         {item.warning && (
-          <MaterialIcon name="alert" size={15} color="#F5A623" style={{ marginLeft: 6 }} />
+          <Ionicons name="warning-outline" size={15} color="#F5A623" style={{ marginLeft: 6 }} />
         )}
       </View>
       {!!item.phone && <Text style={styles.phone}>{item.phone}</Text>}
@@ -77,37 +92,29 @@ const ContactRow = ({ item, onPress }) => (
 );
 
 // ---- Header ----
-const Header = ({ onBack, onSearch }) => (
+const Header = ({ onBack, onSearch }: HeaderProps) => (
   <View style={styles.header}>
     <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-      <Icon name="arrow-left" size={22} color="#1A1A1A" />
+      <Ionicons name="arrow-back" size={22} color="#1A1A1A" />
     </TouchableOpacity>
     <Text style={styles.headerTitle}>Add Customer</Text>
     <TouchableOpacity onPress={onSearch} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-      <Icon name="search" size={20} color="#1A1A1A" />
+      <Ionicons name="search-outline" size={20} color="#1A1A1A" />
     </TouchableOpacity>
   </View>
 );
 
 // ---- Main Screen ----
-export default function AddCustomerScreen({ navigation }) {
+export default function AddCustomerScreen({ navigation }: { navigation?: { goBack: () => void } }) {
   const [searchVisible, setSearchVisible] = useState(false);
   const [query, setQuery] = useState("");
-  const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
-  const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
-  const [saveMessage, setSaveMessage] = useState<string>("");
-  const { user } = useAuth();
+  const [contacts, setContacts] = useState<ContactListItem[]>([]);
   const filteredContacts = contacts.filter(
     (c) => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query),
   );
 
-  useEffect(() => {
-    syncContacts();
-  }, []);
-
   const syncContacts = async () => {
     const { status } = await Contacts.requestPermissionsAsync();
-    setPermissionStatus(status);
 
     if (status === "granted") {
       const { data } = await Contacts.getContactsAsync({
@@ -120,12 +127,29 @@ export default function AddCustomerScreen({ navigation }) {
       });
 
       if (data.length > 0) {
-        setContacts(data);
+        setContacts(
+          data.map((contact, index) => ({
+            id: contact.id ?? String(index),
+            name: contact.name ?? "Unnamed contact",
+            phone: contact.phoneNumbers?.[0]?.number ?? "",
+            image: Boolean(contact.image),
+            color: "#B0B0B0",
+            warning: false,
+          })),
+        );
       }
     }
   };
 
-  const handleSelectContact = (contact) => {
+  useEffect(() => {
+    const contactSyncTimeout = setTimeout(() => {
+      void syncContacts();
+    }, 0);
+
+    return () => clearTimeout(contactSyncTimeout);
+  }, []);
+
+  const handleSelectContact = (contact: ContactListItem) => {
     // navigate to customer detail / confirm screen
     console.log("Selected contact:", contact);
   };
@@ -143,7 +167,7 @@ export default function AddCustomerScreen({ navigation }) {
 
       {searchVisible && (
         <View style={styles.searchBar}>
-          <Icon name="search" size={16} color="#999" style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={16} color="#999" style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search contacts"
@@ -154,7 +178,7 @@ export default function AddCustomerScreen({ navigation }) {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery("")}>
-              <Icon name="x" size={16} color="#999" />
+              <Ionicons name="close" size={16} color="#999" />
             </TouchableOpacity>
           )}
         </View>
@@ -174,7 +198,7 @@ export default function AddCustomerScreen({ navigation }) {
       />
 
       <TouchableOpacity style={styles.fab} activeOpacity={0.85} onPress={handleAddManually}>
-        <Icon name="user-plus" size={18} color="#FFFFFF" />
+        <Ionicons name="person-add-outline" size={18} color="#FFFFFF" />
         <Text style={styles.fabText}>Add Manually</Text>
       </TouchableOpacity>
     </SafeAreaView>

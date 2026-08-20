@@ -11,13 +11,11 @@ import {
   Platform,
   KeyboardTypeOptions,
 } from "react-native";
-import Icon from "react-native-vector-icons/Feather";
-import MaterialIcon from "react-native-vector-icons/MaterialCommunityIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "./types";
+import { Ionicons } from "@expo/vector-icons";
+import type { RootStackParamList } from "../types/navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AddCustomerManual">;
-
 // ---- Floating-label Input ----
 interface FloatingInputProps {
   label: string;
@@ -46,8 +44,8 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
     <View style={[styles.inputWrapper, { borderColor }]}>
       <Text style={[styles.floatingLabel, { color: labelColor }]}>{label}</Text>
       <View style={styles.inputRow}>
-        <Icon
-          name={icon}
+        <Ionicons
+          name={"ice-cream-outline"}
           size={18}
           color={focused ? "#2E7D32" : "#666"}
           style={{ marginRight: 10 }}
@@ -74,7 +72,7 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
 const Header: React.FC<{ onBack: () => void }> = ({ onBack }) => (
   <View style={styles.header}>
     <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-      <Icon name="arrow-left" size={22} color="#1A1A1A" />
+      <Ionicons name="arrow-back" size={22} color="#1A1A1A" />
     </TouchableOpacity>
     <Text style={styles.headerTitle}>Add Customer By Yourself</Text>
   </View>
@@ -124,7 +122,7 @@ const AddCustomerManualScreen: React.FC<Props> = ({ navigation, route }) => {
           />
 
           <TouchableOpacity style={styles.contactsLink} onPress={handleAddFromContacts}>
-            <MaterialIcon name="card-account-phone-outline" size={20} color="#2E7D32" />
+            <Ionicons name="person-add" size={20} color="#2E7D32" />
             <Text style={styles.contactsLinkText}>Add from contacts</Text>
           </TouchableOpacity>
         </View>
