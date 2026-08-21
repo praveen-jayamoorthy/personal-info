@@ -1,13 +1,14 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, TextInput } from "react-native";
 import React, { useState, useEffect } from "react";
 import auth from "@react-native-firebase/auth";
+import type { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import { usePathname, useRouter } from "expo-router";
 
 const Login = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [confirm, setConfirm] = useState(null);
+  const [confirm, setConfirm] = useState<FirebaseAuthTypes.ConfirmationResult | null>(null);
   const [code, setCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,7 +30,7 @@ const Login = () => {
     setLoading(true);
     try {
       await confirm.confirm(code.trim());
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError("Invalid code, try again");
       console.error(e);
     } finally {
