@@ -10,7 +10,7 @@ const accounts = [
     id: "1",
     name: "Arul Komali",
     subtitle: "Added On 07 Aug, 2026",
-    subtitleIcon: "user",
+    subtitleIcon: "umbrella-sharp",
     amount: 0,
     type: "due", // due -> red, advance -> green
     initials: "AK",
@@ -20,7 +20,7 @@ const accounts = [
     id: "2",
     name: "Suvel Ss",
     subtitle: "₹10,000 Payment Added on 05 Aug, 2026",
-    subtitleIcon: "check",
+    subtitleIcon: "checkmark-circle",
     amount: 10000,
     type: "advance",
     initials: "SS",
@@ -30,7 +30,7 @@ const accounts = [
     id: "3",
     name: "Dharani.",
     subtitle: "₹2,000 Payment Added on 05 Aug, 2026",
-    subtitleIcon: "check",
+    subtitleIcon: "checkmark-circle",
     amount: 0,
     type: "due",
     initials: "D",
@@ -40,7 +40,7 @@ const accounts = [
     id: "4",
     name: "iob jewel loan",
     subtitle: "₹5,00,000 Payment Edited on 30 Jul, 2026",
-    subtitleIcon: "check",
+    subtitleIcon: "checkmark-circle",
     amount: 500000,
     type: "advance",
     initials: "I",
@@ -90,7 +90,7 @@ const NetBalanceCard = ({ total, count }) => (
     <View>
       <Text style={styles.balanceLabel}>Net Balance</Text>
       <View style={styles.subtitleRow}>
-        <Ionicons name="user" size={13} color="#666" style={{ marginRight: 4 }} />
+        <Ionicons name="umbrella-sharp" size={13} color="#666" style={{ marginRight: 4 }} />
         <Text style={styles.accountsCount}>{count} Accounts</Text>
       </View>
     </View>
@@ -124,7 +124,10 @@ export default function LedgerScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={{ paddingBottom: 20 }}
       />
-      <TouchableOpacity style={styles.addButton} onPress={() => router.push("/screen/addContact")}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.push("/screen/addContact" as any)}
+      >
         <Text style={styles.addButtonText}>Add</Text>
       </TouchableOpacity>
     </SafeAreaView>

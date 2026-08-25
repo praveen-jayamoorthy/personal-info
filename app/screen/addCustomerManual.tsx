@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import type { RootStackParamList } from "../types/navigation";
+import type { RootStackParamList } from "@/types/navigation";
+import { router } from "expo-router";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AddCustomerManual">;
 // ---- Floating-label Input ----
@@ -80,11 +81,11 @@ const Header: React.FC<{ onBack: () => void }> = ({ onBack }) => (
 
 // ---- Main Screen ----
 const AddCustomerManualScreen: React.FC<Props> = ({ navigation, route }) => {
-  const [name, setName] = useState<string>(route.params?.name ?? "");
-  const [phone, setPhone] = useState<string>(route.params?.phone ?? "");
+  const [name, setName] = useState<string>(route?.params?.name ?? "");
+  const [phone, setPhone] = useState<string>(route?.params?.phone ?? "");
 
   const handleAddFromContacts = () => {
-    navigation.navigate("AddCustomer");
+    router.push("/screen/addContact");
   };
 
   const handleConfirm = () => {
@@ -96,7 +97,7 @@ const AddCustomerManualScreen: React.FC<Props> = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <Header onBack={() => navigation.goBack()} />
+      <Header onBack={() => router.back()} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

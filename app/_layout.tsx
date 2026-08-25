@@ -84,9 +84,11 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       {hideHeader && <AppHeader />}
       <Stack screenOptions={{ headerShown: false }}>
-        {user && isRegistered === true && <Stack.Screen name="(tabs)" />}
-        {user && isRegistered === false && <Stack.Screen name="register" />}
-        {!user && <Stack.Screen name="index" />}
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="screen/addContact" />
+        <Stack.Screen name="screen/addCustomerManual" />
       </Stack>
 
       <StatusBar style="auto" />

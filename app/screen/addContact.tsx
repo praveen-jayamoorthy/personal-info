@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as Contacts from "expo-contacts";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 type ContactListItem = {
   id: string;
@@ -30,22 +31,6 @@ type ContactRowProps = {
   item: ContactListItem;
   onPress: (contact: ContactListItem) => void;
 };
-
-/* // ---- Mock Data ----
-const contacts = [
-  { id: '1', name: 'AMARAN......', phone: '9789026803', warning: true, image: null, color: '#B0B0B0' },
-  { id: '2', name: 'A\\c.no-ariy', phone: '6106192020', warning: false, image: null, color: '#B0B0B0' },
-  { id: '3', name: 'Aathavan Fridge Service', phone: '9940433774', warning: false, image: 'photo', color: '#4A5568' },
-  { id: '4', name: 'Abdul Softsuave', phone: '7010860850', warning: false, image: 'photo', color: '#8B4513' },
-  { id: '5', name: 'Abdul Softsuave', phone: '9543123141', warning: false, image: 'photo', color: '#8B4513' },
-  { id: '6', name: 'Ac Service', phone: '8098077839', warning: false, image: 'photo', color: '#2F855A' },
-  { id: '7', name: 'Acko', phone: '8072768986', warning: false, image: null, color: '#B0B0B0' },
-  { id: '8', name: 'Adhira S', phone: '8122548773', warning: false, image: 'photo', color: '#C53030' },
-  { id: '9', name: 'Ajax Ws', phone: '8608840417', warning: false, image: null, color: '#B0B0B0' },
-  { id: '10', name: 'Akbar Ctg Cab', phone: '9840604659', warning: false, image: null, color: '#B0B0B0' },
-  { id: '11', name: 'Alex Ss', phone: '7395850735', warning: false, image: 'photo', color: '#4A5568' },
-  { id: '12', name: 'Alex Ss', phone: '', warning: false, image: 'photo', color: '#4A5568' },
-]; */
 
 // ---- Avatar ----
 const Avatar = ({ contact }: { contact: ContactListItem }) => {
@@ -105,7 +90,7 @@ const Header = ({ onBack, onSearch }: HeaderProps) => (
 );
 
 // ---- Main Screen ----
-export default function AddCustomerScreen({ navigation }: { navigation?: { goBack: () => void } }) {
+export default function AddCustomerScreen() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [query, setQuery] = useState("");
   const [contacts, setContacts] = useState<ContactListItem[]>([]);
@@ -113,20 +98,31 @@ export default function AddCustomerScreen({ navigation }: { navigation?: { goBac
     (c) => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query),
   );
 
-  const syncContacts = async () => {
-    const { status } = await Contacts.requestPermissionsAsync();
+  useEffect(() => {
+    console.log("Syncing contacts...");
+    const syncContacts = async () => {
+      try {
+        const currentPermission = await Contacts.getPermissionsAsync();
 
-    if (status === "granted") {
-      const { data } = await Contacts.getContactsAsync({
-        fields: [
-          Contacts.Fields.Name,
-          Contacts.Fields.PhoneNumbers,
-          Contacts.Fields.Emails,
-          Contacts.Fields.Image,
-        ],
-      });
+        let permissionStatus = currentPermission.status;
+        if (permissionStatus !== "granted") {
+          const requestedPermission = await Contacts.requestPermissionsAsync();
+          permissionStatus = requestedPermission.status;
+        }
 
-      if (data.length > 0) {
+        if (permissionStatus !== "granted") {
+          return;
+        }
+
+        const { data } = await Contacts.getContactsAsync({
+          fields: [
+            Contacts.Fields.Name,
+            Contacts.Fields.PhoneNumbers,
+            Contacts.Fields.Emails,
+            Contacts.Fields.Image,
+          ],
+        });
+
         setContacts(
           data.map((contact, index) => ({
             id: contact.id ?? String(index),
@@ -137,16 +133,12 @@ export default function AddCustomerScreen({ navigation }: { navigation?: { goBac
             warning: false,
           })),
         );
+      } catch (error) {
+        console.error("Failed to sync contacts:", error);
       }
-    }
-  };
+    };
 
-  useEffect(() => {
-    const contactSyncTimeout = setTimeout(() => {
-      void syncContacts();
-    }, 0);
-
-    return () => clearTimeout(contactSyncTimeout);
+    void syncContacts();
   }, []);
 
   const handleSelectContact = (contact: ContactListItem) => {
@@ -154,16 +146,14 @@ export default function AddCustomerScreen({ navigation }: { navigation?: { goBac
     console.log("Selected contact:", contact);
   };
 
-  const handleAddManually = () => {
-    // navigate to manual add form
-    console.log("Add manually pressed");
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <Header onBack={() => navigation?.goBack()} onSearch={() => setSearchVisible((v) => !v)} />
+      <Header
+        onBack={() => router.push("/(tabs)" as any)}
+        onSearch={() => setSearchVisible((v) => !v)}
+      />
 
       {searchVisible && (
         <View style={styles.searchBar}>
@@ -197,7 +187,11 @@ export default function AddCustomerScreen({ navigation }: { navigation?: { goBac
         showsVerticalScrollIndicator={false}
       />
 
-      <TouchableOpacity style={styles.fab} activeOpacity={0.85} onPress={handleAddManually}>
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.85}
+        onPress={() => router.push("/screen/addCustomerManual" as any)}
+      >
         <Ionicons name="person-add-outline" size={18} color="#FFFFFF" />
         <Text style={styles.fabText}>Add Manually</Text>
       </TouchableOpacity>
