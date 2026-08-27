@@ -91,7 +91,6 @@ export default function LedgerScreen() {
   useEffect(() => {
     const currentUser = auth().currentUser;
     if (!currentUser) {
-      setAccounts([]);
       return;
     }
 
