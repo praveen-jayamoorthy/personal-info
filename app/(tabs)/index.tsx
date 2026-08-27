@@ -1,64 +1,40 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { router } from "expo-router";
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 
-// ---- Mock Data ----
-const accounts = [
-  {
-    id: "1",
-    name: "Arul Komali",
-    subtitle: "Added On 07 Aug, 2026",
-    subtitleIcon: "umbrella-sharp",
-    amount: 0,
-    type: "due", // due -> red, advance -> green
-    initials: "AK",
-    color: "#4CAF50",
-  },
-  {
-    id: "2",
-    name: "Suvel Ss",
-    subtitle: "₹10,000 Payment Added on 05 Aug, 2026",
-    subtitleIcon: "checkmark-circle",
-    amount: 10000,
-    type: "advance",
-    initials: "SS",
-    color: "#2196F3",
-  },
-  {
-    id: "3",
-    name: "Dharani.",
-    subtitle: "₹2,000 Payment Added on 05 Aug, 2026",
-    subtitleIcon: "checkmark-circle",
-    amount: 0,
-    type: "due",
-    initials: "D",
-    color: "#009688",
-  },
-  {
-    id: "4",
-    name: "iob jewel loan",
-    subtitle: "₹5,00,000 Payment Edited on 30 Jul, 2026",
-    subtitleIcon: "checkmark-circle",
-    amount: 500000,
-    type: "advance",
-    initials: "I",
-    color: "#E53935",
-  },
-];
+type Account = {
+  id: string;
+  name: string;
+  subtitle: string;
+  subtitleIcon: keyof typeof Ionicons.glyphMap;
+  amount: number;
+  type: "due" | "advance";
+  initials: string;
+  color: string;
+};
 
-const formatCurrency = (value) => `₹${value.toLocaleString("en-IN")}`;
+type SavedContact = {
+  contactId?: string;
+  name?: string;
+  phone?: string;
+  color?: string;
+};
+
+const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
 // ---- Avatar ----
-const Avatar = ({ initials, color }) => (
+const Avatar = ({ initials, color }: Pick<Account, "initials" | "color">) => (
   <View style={[styles.avatar, { backgroundColor: color }]}>
     <Text style={styles.avatarText}>{initials}</Text>
   </View>
 );
 
 // ---- Account Row ----
-const AccountRow = ({ item }) => {
+const AccountRow = ({ item }: { item: Account }) => {
   const isDue = item.type === "due";
   return (
     <TouchableOpacity style={styles.row} activeOpacity={0.7}>
@@ -85,7 +61,7 @@ const AccountRow = ({ item }) => {
 };
 
 // ---- Net Balance Header ----
-const NetBalanceCard = ({ total, count }) => (
+const NetBalanceCard = ({ total, count }: { total: number; count: number }) => (
   <View style={styles.balanceCard}>
     <View>
       <Text style={styles.balanceLabel}>Net Balance</Text>
@@ -110,8 +86,52 @@ const NetBalanceCard = ({ total, count }) => (
 
 // ---- Main Screen ----
 export default function LedgerScreen() {
-  const netBalance = 93560;
-  const accountCount = 12;
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  useEffect(() => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      setAccounts([]);
+      return;
+    }
+
+    const unsubscribe = firestore()
+      .collection("users")
+      .doc(currentUser.uid)
+      .onSnapshot(
+        (snapshot) => {
+          const savedContacts = snapshot.data()?.contact;
+          const contacts = Array.isArray(savedContacts) ? (savedContacts as SavedContact[]) : [];
+
+          setAccounts(
+            contacts.map((contact, index) => {
+              const name = contact.name?.trim() || "Unnamed contact";
+              return {
+                id: contact.contactId || `${name}-${index}`,
+                name,
+                subtitle: contact.phone || "Added from phonebook",
+                subtitleIcon: contact.phone ? "call-outline" : "person-add-outline",
+                amount: 0,
+                type: "due",
+                initials: name
+                  .split(" ")
+                  .map((part) => part[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase(),
+                color: contact.color || "#4CAF50",
+              };
+            }),
+          );
+        },
+        (error) => console.error("Failed to load saved contacts:", error),
+      );
+
+    return unsubscribe;
+  }, []);
+
+  const netBalance = accounts.reduce((total, account) => total + account.amount, 0);
+  const accountCount = accounts.length;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -123,6 +143,7 @@ export default function LedgerScreen() {
         renderItem={({ item }) => <AccountRow item={item} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={{ paddingBottom: 20 }}
+        ListEmptyComponent={<Text style={styles.emptyText}>No contacts added yet</Text>}
       />
       <TouchableOpacity
         style={styles.addButton}
@@ -238,6 +259,11 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#EFEFEF",
     marginLeft: 72,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#8A8A8A",
+    marginTop: 40,
   },
   addButton: {
     position: "absolute",

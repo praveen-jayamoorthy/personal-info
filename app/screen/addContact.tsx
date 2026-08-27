@@ -12,6 +12,8 @@ import {
 import * as Contacts from "expo-contacts";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import auth from "@react-native-firebase/auth";
+import firestore from "@react-native-firebase/firestore";
 
 type ContactListItem = {
   id: string;
@@ -141,9 +143,42 @@ export default function AddCustomerScreen() {
     void syncContacts();
   }, []);
 
-  const handleSelectContact = (contact: ContactListItem) => {
-    // navigate to customer detail / confirm screen
-    console.log("Selected contact:", contact);
+  const handleSelectContact = async (contact: ContactListItem) => {
+    try {
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        throw new Error("No authenticated user available.");
+      }
+
+      const contactDetails = {
+        contactId: contact.id,
+        name: contact.name,
+        phone: contact.phone,
+        image: contact.image,
+        color: contact.color,
+        warning: contact.warning,
+        updatedAt: firestore.Timestamp.now(),
+      };
+
+      const userRef = firestore().collection("users").doc(currentUser.uid);
+      const wasSaved = await firestore().runTransaction(async (transaction) => {
+        const userSnapshot = await transaction.get(userRef);
+        const savedContacts = userSnapshot.data()?.contact;
+        const contacts = Array.isArray(savedContacts) ? savedContacts : [];
+
+        if (contacts.some((savedContact) => savedContact?.contactId === contact.id)) {
+          return false;
+        }
+
+        transaction.set(userRef, { contact: [...contacts, contactDetails] }, { merge: true });
+        return true;
+      });
+
+      console.log(wasSaved ? "Selected contact saved:" : "Contact already saved:", contact.id);
+      router.push("/(tabs)" as any);
+    } catch (error) {
+      console.error("Failed to save selected contact:", error);
+    }
   };
 
   return (
