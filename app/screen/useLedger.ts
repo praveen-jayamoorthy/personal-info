@@ -41,16 +41,14 @@ export function useLedger(
   useEffect(() => {
     if (!userId || !contactId) return;
 
-    setLoading(true);
-
     const unsubTx = listenToPaymentTransactions(
       userId,
       contactId,
-      (txs) => {
+      (txs: PaymentTransaction[]) => {
         setTransactions(txs);
         setLoading(false);
       },
-      (err) => {
+      (err: Error) => {
         setError(err.message);
         setLoading(false);
       },
@@ -59,8 +57,8 @@ export function useLedger(
     const unsubSummary = listenToContactSummary(
       userId,
       contactId,
-      (s) => setSummary(s),
-      (err) => setError(err.message),
+      (s: ContactSummary | null) => setSummary(s),
+      (err: Error) => setError(err.message),
     );
 
     return () => {
@@ -102,15 +100,13 @@ export function useAllContacts(userId: string | null) {
 
   useEffect(() => {
     if (!userId) return;
-    setLoading(true);
-
     const unsub = listenToAllContacts(
       userId,
-      (list) => {
+      (list: ContactSummary[]) => {
         setContacts(list);
         setLoading(false);
       },
-      (err) => {
+      (err: Error) => {
         setError(err.message);
         setLoading(false);
       },
