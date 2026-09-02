@@ -22,6 +22,7 @@ type SavedContact = {
   name?: string;
   phone?: string;
   color?: string;
+  balanceDue?: number;
 };
 
 const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN")}`;
@@ -37,7 +38,16 @@ const Avatar = ({ initials, color }: Pick<Account, "initials" | "color">) => (
 const AccountRow = ({ item }: { item: Account }) => {
   const isDue = item.type === "due";
   return (
-    <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={styles.row}
+      activeOpacity={0.7}
+      onPress={() =>
+        router.push({
+          pathname: "/screen/LedgerScreen",
+          params: { contactId: item.id, contactName: item.name },
+        })
+      }
+    >
       <Avatar initials={item.initials} color={item.color} />
 
       <View style={styles.rowContent}>
@@ -72,7 +82,9 @@ const NetBalanceCard = ({ total, count }: { total: number; count: number }) => (
     </View>
 
     <View style={styles.balanceRight}>
-      <Text style={styles.balanceAmount}>{formatCurrency(total)}</Text>
+      <Text style={[styles.balanceAmount, { color: total < 0 ? "#2E7D32" : "#E53935" }]}>
+        {formatCurrency(Math.abs(total))}
+      </Text>
       <Text style={styles.balanceSub}>You Get</Text>
     </View>
 
@@ -110,8 +122,8 @@ export default function LedgerScreen() {
                 name,
                 subtitle: contact.phone || "Added from phonebook",
                 subtitleIcon: contact.phone ? "call-outline" : "person-add-outline",
-                amount: 0,
-                type: "due",
+                amount: Math.abs(contact.balanceDue ?? 0),
+                type: (contact.balanceDue ?? 0) >= 0 ? "due" : "advance",
                 initials: name
                   .split(" ")
                   .map((part) => part[0])
@@ -129,7 +141,10 @@ export default function LedgerScreen() {
     return unsubscribe;
   }, []);
 
-  const netBalance = accounts.reduce((total, account) => total + account.amount, 0);
+  const netBalance = accounts.reduce(
+    (total, account) => total + (account.type === "due" ? account.amount : -account.amount),
+    0,
+  );
   const accountCount = accounts.length;
 
   return (

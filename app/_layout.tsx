@@ -89,6 +89,8 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="screen/addContact" />
         <Stack.Screen name="screen/addCustomerManual" />
+        <Stack.Screen name="screen/LedgerScreen" />
+        <Stack.Screen name="screen/addTransactionScreen" />
       </Stack>
 
       <StatusBar style="auto" />
