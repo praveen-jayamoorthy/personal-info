@@ -48,7 +48,7 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-const HIDDEN_ROUTES = ["/login"]; // add any other screens here
+const HIDDEN_ROUTES = ["/login", "/register", "/index"]; // add any other screens here
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -79,10 +79,11 @@ function RootLayoutNav() {
   }, [initializing, isRegistered, user]);
   const pathname = usePathname();
   const hideHeader = HIDDEN_ROUTES.includes(pathname);
+  console.log(pathname);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      {hideHeader && <AppHeader />}
+      {!hideHeader && <AppHeader />}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="register" />

@@ -28,7 +28,7 @@ export default function AppHeader() {
   function handleLogout() {
     setIsProfileOpen(false);
     auth().signOut();
-    router.replace("/");
+    router.replace("/index");
   }
 
   return (

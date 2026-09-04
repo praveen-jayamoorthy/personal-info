@@ -101,7 +101,6 @@ export default function AddCustomerScreen() {
   );
 
   useEffect(() => {
-    console.log("Syncing contacts...");
     const syncContacts = async () => {
       try {
         const currentPermission = await Contacts.getPermissionsAsync();
@@ -174,7 +173,6 @@ export default function AddCustomerScreen() {
         return true;
       });
 
-      console.log(wasSaved ? "Selected contact saved:" : "Contact already saved:", contact.id);
       router.push("/(tabs)" as any);
     } catch (error) {
       console.error("Failed to save selected contact:", error);
