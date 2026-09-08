@@ -106,6 +106,7 @@ export default function LedgerScreen() {
       return;
     }
 
+    console.log(currentUser.uid)
     const unsubscribe = firestore()
       .collection("users")
       .doc(currentUser.uid)

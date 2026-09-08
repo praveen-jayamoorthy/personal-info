@@ -27,7 +27,7 @@ export default function RegisterScreen() {
 
   useEffect(() => {
     if (!user) {
-      router.replace("/login");
+      router.replace("/index");
       return;
     }
   }, [user, router]);

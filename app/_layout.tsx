@@ -1,7 +1,7 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { router, Stack, usePathname } from "expo-router";
+import { router, Stack, usePathname, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
@@ -48,11 +48,15 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-const HIDDEN_ROUTES = ["/login", "/register", "/index"]; // add any other screens here
+const HIDDEN_ROUTES = ["/register"];
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { user, initializing, isRegistered, _init } = useAuthStore();
+  const pathname = usePathname();
+  const segments = useSegments();
+  const isLoginRoute = segments.length === 1 && segments[0] === "index";
+  const isTabsRoute = segments[0] === "(tabs)";
 
   useEffect(() => {
     return _init();
@@ -63,27 +67,32 @@ function RootLayoutNav() {
       return;
     }
 
-    if (!user) {
-      router.replace("/index");
+    if (!user && !isLoginRoute) {
+      console.log("User not authenticated, redirecting to login");
+      router.replace("/");
       return;
     }
 
-    if (isRegistered === false) {
+    if (user && isRegistered === false && pathname !== "/register") {
       router.replace("/register");
       return;
     }
 
-    if (isRegistered === true) {
+/*     if (user && isRegistered === true && !isTabsRoute) {
+      console.log("User redirecting to /tabs");
+
       router.replace("/(tabs)");
-    }
-  }, [initializing, isRegistered, user]);
-  const pathname = usePathname();
+    } */
+  }, [initializing, isLoginRoute, isRegistered, isTabsRoute, pathname, user]);
+
+  //   }, [initializing, isLoginRoute, isRegistered, user]);
+
+  console.log("pathname", pathname);
   const hideHeader = HIDDEN_ROUTES.includes(pathname);
-  console.log(pathname);
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      {!hideHeader && <AppHeader />}
+      {!hideHeader && user && isRegistered === true && <AppHeader />}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="register" />

@@ -15,6 +15,8 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import type { RootStackParamList } from "@/types/navigation";
 import { router } from "expo-router";
+import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AddCustomerManual">;
 // ---- Floating-label Input ----
@@ -88,9 +90,44 @@ const AddCustomerManualScreen: React.FC<Props> = ({ navigation, route }) => {
     router.push("/screen/addContact");
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     console.log("Confirm pressed", { name, phone });
-    // e.g. dispatch/save, then navigation.navigate('Ledger')
+     try {
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        throw new Error("No authenticated user available.");
+      }
+
+      const contactId = firestore()
+        .collection("users")
+        .doc(currentUser.uid)
+        .collection("contact")
+        .doc().id;
+      const contactDetails = {
+        contactId,
+        name: name,
+        phone: phone,
+        updatedAt: firestore.Timestamp.now(),
+      };
+
+      const userRef = firestore().collection("users").doc(currentUser.uid);
+      const wasSaved = await firestore().runTransaction(async (transaction) => {
+        const userSnapshot = await transaction.get(userRef);
+        const savedContacts = userSnapshot.data()?.contact;
+        const contacts = Array.isArray(savedContacts) ? savedContacts : [];
+
+        if (contacts.some((savedContact) => savedContact?.contactId === contactId)) {
+          return false;
+        }
+
+        transaction.set(userRef, { contact: [...contacts, contactDetails] }, { merge: true });
+        return true;
+      });
+
+      router.push("/(tabs)" as any);
+    } catch (error) {
+      console.error("Failed to save selected contact:", error);
+    }
   };
 
   return (

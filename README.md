@@ -3,5 +3,8 @@ This is the source code for implementing phone auth using expo + firebase: [sour
 Packages installed:
 npx expo install @react-native-firebase/app @react-native-firebase/auth expo-build-properties
 
+
+npx expo prebuild --clean
+
 npx expo prebuild
 npx expo run:android

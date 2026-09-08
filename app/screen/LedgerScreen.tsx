@@ -11,7 +11,9 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLedger } from "./useLedger";
 import { PaymentTransaction, TransactionType } from "./paymentService";
@@ -206,6 +208,13 @@ export default function LedgerScreen() {
   );
 
   const [modalType, setModalType] = useState<TransactionType | null>(null);
+  const [dueDate, setDueDate] = useState(new Date());
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+
+  const handleDueDateChange = (event: DateTimePickerEvent, selected?: Date) => {
+    setShowDueDatePicker(Platform.OS === "ios");
+    if (selected) setDueDate(selected);
+  };
 
   const grouped = useMemo(() => groupByDate(transactions), [transactions]);
   const balanceDue = summary?.balanceDue ?? 0;
@@ -295,9 +304,9 @@ export default function LedgerScreen() {
       {/* Bottom panel */}
       <View style={styles.bottomPanel}>
         <View style={styles.dueDateRow}>
-          <TouchableOpacity style={styles.dueDateBtn}>
+          <TouchableOpacity style={styles.dueDateBtn} onPress={() => setShowDueDatePicker(true)}>
             <Icon name="calendar" size={14} color="#2E7D6B" />
-            <Text style={styles.dueDateText}>Due Date</Text>
+            <Text style={styles.dueDateText}>{formatDate(dueDate)}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.callBtn}>
@@ -310,6 +319,15 @@ export default function LedgerScreen() {
             <Text style={styles.remindBtnText}>Remind</Text>
           </TouchableOpacity>
         </View>
+
+        {showDueDatePicker && (
+          <DateTimePicker
+            value={dueDate}
+            mode="date"
+            display={Platform.OS === "ios" ? "inline" : "default"}
+            onChange={handleDueDateChange}
+          />
+        )}
 
         <TouchableOpacity style={styles.balanceRow}>
           <Text style={styles.balanceLabel}>Balance Due</Text>
@@ -343,7 +361,9 @@ export default function LedgerScreen() {
         visible={modalType !== null}
         type={modalType}
         onClose={() => setModalType(null)}
-        onSubmit={(amount, note) => recordPayment(modalType as TransactionType, amount, note)}
+        onSubmit={(amount, note) =>
+          recordPayment(modalType as TransactionType, amount, note, dueDate)
+        }
       />
     </SafeAreaView>
   );
