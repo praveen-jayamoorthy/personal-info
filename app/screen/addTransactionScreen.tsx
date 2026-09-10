@@ -106,6 +106,7 @@ export default function AddTransactionScreen() {
     contactId?: string;
     contactName?: string;
     type?: TransactionType;
+    note?: string;
   }>();
   const contactId = typeof params.contactId === 'string' ? params.contactId : '';
   const contactName = typeof params.contactName === 'string' ? params.contactName : 'Contact';
@@ -122,7 +123,7 @@ export default function AddTransactionScreen() {
   const { display, pressDigit, pressBackspace, pressOperator, pressEquals, amount, reset } =
     useCalculatorAmount();
 
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(typeof params.note === 'string' ? params.note : '');
   const [billDate, setBillDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);

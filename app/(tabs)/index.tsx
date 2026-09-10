@@ -5,6 +5,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import {
+  beginFirebaseRequest,
+  endFirebaseRequest,
+} from "@/store/firebaseRequestStore";
 
 type Account = {
   id: string;
@@ -23,6 +27,7 @@ type SavedContact = {
   phone?: string;
   color?: string;
   balanceDue?: number;
+  disabled?: boolean;
 };
 
 const formatCurrency = (value: number) => `₹${value.toLocaleString("en-IN")}`;
@@ -112,31 +117,43 @@ export default function LedgerScreen() {
       .doc(currentUser.uid)
       .onSnapshot(
         (snapshot) => {
-          const savedContacts = snapshot.data()?.contact;
-          const contacts = Array.isArray(savedContacts) ? (savedContacts as SavedContact[]) : [];
+          beginFirebaseRequest();
+          try {
+            const savedContacts = snapshot.data()?.contact;
+            const contacts = (Array.isArray(savedContacts)
+              ? (savedContacts as SavedContact[])
+              : []
+            ).filter((contact) => contact.disabled !== true);
 
-          setAccounts(
-            contacts.map((contact, index) => {
-              const name = contact.name?.trim() || "Unnamed contact";
-              return {
-                id: contact.contactId || `${name}-${index}`,
-                name,
-                subtitle: contact.phone || "Added from phonebook",
-                subtitleIcon: contact.phone ? "call-outline" : "person-add-outline",
-                amount: Math.abs(contact.balanceDue ?? 0),
-                type: (contact.balanceDue ?? 0) >= 0 ? "due" : "advance",
-                initials: name
-                  .split(" ")
-                  .map((part) => part[0])
-                  .join("")
-                  .slice(0, 2)
-                  .toUpperCase(),
-                color: contact.color || "#4CAF50",
-              };
-            }),
-          );
+            setAccounts(
+              contacts.map((contact, index) => {
+                const name = contact.name?.trim() || "Unnamed contact";
+                return {
+                  id: contact.contactId || `${name}-${index}`,
+                  name,
+                  subtitle: contact.phone || "Added from phonebook",
+                  subtitleIcon: contact.phone ? "call-outline" : "person-add-outline",
+                  amount: Math.abs(contact.balanceDue ?? 0),
+                  type: (contact.balanceDue ?? 0) >= 0 ? "due" : "advance",
+                  initials: name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase(),
+                  color: contact.color || "#4CAF50",
+                };
+              }),
+            );
+          } finally {
+            endFirebaseRequest();
+          }
         },
-        (error) => console.error("Failed to load saved contacts:", error),
+        (error) => {
+          beginFirebaseRequest();
+          endFirebaseRequest();
+          console.error("Failed to load saved contacts:", error);
+        },
       );
 
     return unsubscribe;

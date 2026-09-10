@@ -13,10 +13,10 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLedger } from "./useLedger";
-import { PaymentTransaction, TransactionType } from "./paymentService";
+import { disableContact, PaymentTransaction, TransactionType } from "./paymentService";
 import auth from "@react-native-firebase/auth";
 
 // Optional: swap for @expo/vector-icons or react-native-vector-icons
@@ -82,10 +82,20 @@ function groupByDate(transactions: PaymentTransaction[]) {
   return groups;
 }
 
-function TransactionCard({ entry }: { entry: PaymentTransaction & { dueAfter: number } }) {
+function TransactionCard({
+  entry,
+  onPress,
+}: {
+  entry: PaymentTransaction & { dueAfter: number };
+  onPress: () => void;
+}) {
   const isGiven = entry.type === "given";
   return (
-    <View style={[styles.cardWrapper, { alignSelf: isGiven ? "flex-end" : "flex-start" }]}>
+    <TouchableOpacity
+      style={[styles.cardWrapper, { alignSelf: isGiven ? "flex-end" : "flex-start" }]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardHeaderText}>Added by {entry.addedBy}</Text>
@@ -101,7 +111,7 @@ function TransactionCard({ entry }: { entry: PaymentTransaction & { dueAfter: nu
       <Text style={[styles.dueLabel, { alignSelf: isGiven ? "flex-end" : "flex-start" }]}>
         {formatCurrency(Math.abs(entry.dueAfter))} {entry.dueAfter >= 0 ? "Due" : "Advance"}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -119,12 +129,14 @@ interface AmountModalProps {
   visible: boolean;
   type: TransactionType | null;
   onClose: () => void;
-  onSubmit: (amount: number, note?: string) => Promise<void>;
+  onSubmit: (amount: number, note: string | undefined, billDate: Date) => Promise<void>;
 }
 
 function AmountModal({ visible, type, onClose, onSubmit }: AmountModalProps) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [billDate, setBillDate] = useState(new Date());
+  const [showBillDatePicker, setShowBillDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const isGiven = type === "given";
@@ -137,9 +149,11 @@ function AmountModal({ visible, type, onClose, onSubmit }: AmountModalProps) {
     }
     setSubmitting(true);
     try {
-      await onSubmit(value, note.trim() || undefined);
+      await onSubmit(value, note.trim() || undefined, billDate);
       setAmount("");
       setNote("");
+      setBillDate(new Date());
+      setShowBillDatePicker(false);
       onClose();
     } catch (err) {
       Alert.alert("Failed to save", (err as Error).message);
@@ -167,6 +181,29 @@ function AmountModal({ visible, type, onClose, onSubmit }: AmountModalProps) {
             value={note}
             onChangeText={setNote}
           />
+          <TouchableOpacity
+            style={styles.billDateButton}
+            onPress={() => setShowBillDatePicker(true)}
+            disabled={submitting}
+          >
+            <Icon name="calendar" size={16} color="#2E7D6B" />
+            <View style={styles.billDateTextContainer}>
+              <Text style={styles.billDateLabel}>Bill Date</Text>
+              <Text style={styles.billDateValue}>{formatDate(billDate)}</Text>
+            </View>
+            <Icon name="chevron" size={18} color="#2E7D6B" />
+          </TouchableOpacity>
+          {showBillDatePicker && (
+            <DateTimePicker
+              value={billDate}
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={(event, selected) => {
+                setShowBillDatePicker(Platform.OS === "ios");
+                if (selected) setBillDate(selected);
+              }}
+            />
+          )}
           <View style={styles.modalActions}>
             <TouchableOpacity style={styles.modalCancelBtn} onPress={onClose} disabled={submitting}>
               <Text style={styles.modalCancelText}>Cancel</Text>
@@ -208,12 +245,20 @@ export default function LedgerScreen() {
   );
 
   const [modalType, setModalType] = useState<TransactionType | null>(null);
-  const [dueDate, setDueDate] = useState(new Date());
-  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const [disablingContact, setDisablingContact] = useState(false);
 
-  const handleDueDateChange = (event: DateTimePickerEvent, selected?: Date) => {
-    setShowDueDatePicker(Platform.OS === "ios");
-    if (selected) setDueDate(selected);
+  const handleDisableContact = async () => {
+    setShowMoreOptions(false);
+    setDisablingContact(true);
+    try {
+      await disableContact(userId, contactId);
+      router.replace("/(tabs)");
+    } catch (disableError) {
+      Alert.alert("Failed to disable contact", (disableError as Error).message);
+    } finally {
+      setDisablingContact(false);
+    }
   };
 
   const grouped = useMemo(() => groupByDate(transactions), [transactions]);
@@ -272,7 +317,20 @@ export default function LedgerScreen() {
               <View key={idx}>
                 <DateSeparator label={group.date} />
                 {group.entries.map((entry) => (
-                  <TransactionCard key={entry.id} entry={entry} />
+                  <TransactionCard
+                    key={entry.id}
+                    entry={entry}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/screen/transactionDetailScreen" as never,
+                        params: {
+                          contactId,
+                          contactName,
+                          transactionId: entry.id,
+                        },
+                      })
+                    }
+                  />
                 ))}
               </View>
             ))
@@ -295,7 +353,7 @@ export default function LedgerScreen() {
           <Icon name="whatsapp" size={16} color="#3A6F63" />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity style={styles.moreBtn}>
+        <TouchableOpacity style={styles.moreBtn} onPress={() => setShowMoreOptions(true)}>
           <Text style={styles.moreText}>More</Text>
           <Icon name="more" size={16} color="#3A6F63" />
         </TouchableOpacity>
@@ -304,11 +362,6 @@ export default function LedgerScreen() {
       {/* Bottom panel */}
       <View style={styles.bottomPanel}>
         <View style={styles.dueDateRow}>
-          <TouchableOpacity style={styles.dueDateBtn} onPress={() => setShowDueDatePicker(true)}>
-            <Icon name="calendar" size={14} color="#2E7D6B" />
-            <Text style={styles.dueDateText}>{formatDate(dueDate)}</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.callBtn}>
             <Icon name="call" size={14} color="#fff" />
             <Text style={styles.callBtnText}>Call</Text>
@@ -319,15 +372,6 @@ export default function LedgerScreen() {
             <Text style={styles.remindBtnText}>Remind</Text>
           </TouchableOpacity>
         </View>
-
-        {showDueDatePicker && (
-          <DateTimePicker
-            value={dueDate}
-            mode="date"
-            display={Platform.OS === "ios" ? "inline" : "default"}
-            onChange={handleDueDateChange}
-          />
-        )}
 
         <TouchableOpacity style={styles.balanceRow}>
           <Text style={styles.balanceLabel}>Balance Due</Text>
@@ -361,10 +405,41 @@ export default function LedgerScreen() {
         visible={modalType !== null}
         type={modalType}
         onClose={() => setModalType(null)}
-        onSubmit={(amount, note) =>
-          recordPayment(modalType as TransactionType, amount, note, dueDate)
+        onSubmit={(amount, note, billDate) =>
+          recordPayment(modalType as TransactionType, amount, note, billDate)
         }
       />
+
+      <Modal
+        visible={showMoreOptions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMoreOptions(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.optionsCard}>
+            <Text style={styles.optionsTitle}>Contact options</Text>
+            <TouchableOpacity
+              style={styles.disableContactBtn}
+              onPress={() => void handleDisableContact()}
+              disabled={disablingContact}
+            >
+              {disablingContact ? (
+                <ActivityIndicator color="#C0392B" size="small" />
+              ) : (
+                <Text style={styles.disableContactText}>Disable contact</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionsCancelBtn}
+              onPress={() => setShowMoreOptions(false)}
+              disabled={disablingContact}
+            >
+              <Text style={styles.optionsCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -542,6 +617,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 12,
   },
+  billDateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D7E5E0",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 12,
+  },
+  billDateTextContainer: { flex: 1, marginLeft: 8 },
+  billDateLabel: { color: "#666", fontSize: 11 },
+  billDateValue: { color: "#2E7D6B", fontSize: 14, fontWeight: "600", marginTop: 2 },
   modalActions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 6 },
   modalCancelBtn: { paddingVertical: 10, paddingHorizontal: 16 },
   modalCancelText: { color: "#666", fontSize: 14, fontWeight: "600" },
@@ -553,4 +641,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalSaveText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  optionsCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 24,
+    borderRadius: 12,
+    padding: 20,
+  },
+  optionsTitle: { fontSize: 17, fontWeight: "700", color: "#1A1A1A", marginBottom: 16 },
+  disableContactBtn: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: "#C0392B",
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  disableContactText: { color: "#C0392B", fontSize: 14, fontWeight: "700" },
+  optionsCancelBtn: { alignItems: "center", paddingVertical: 12 },
+  optionsCancelText: { color: "#666", fontSize: 14, fontWeight: "600" },
 });

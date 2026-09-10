@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import auth from "@react-native-firebase/auth";
 import type { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import { usePathname, useRouter } from "expo-router";
+import { withFirebaseRequest } from "@/store/firebaseRequestStore";
 
 const Login = () => {
   const pathname = usePathname();
@@ -20,7 +21,9 @@ const Login = () => {
 
   // Handle the button press
   async function signInWithPhoneNumber() {
-    const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
+    const confirmation = await withFirebaseRequest(() =>
+      auth().signInWithPhoneNumber(phoneNumber),
+    );
     setConfirm(confirmation);
   }
 
@@ -29,7 +32,7 @@ const Login = () => {
     setError("");
     setLoading(true);
     try {
-      await confirm.confirm(code.trim());
+      await withFirebaseRequest(() => confirm.confirm(code.trim()));
     } catch (e: unknown) {
       setError("Invalid code, try again");
       console.error(e);

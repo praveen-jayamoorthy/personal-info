@@ -17,6 +17,7 @@ import type { RootStackParamList } from "@/types/navigation";
 import { router } from "expo-router";
 import firestore from "@react-native-firebase/firestore";
 import auth from "@react-native-firebase/auth";
+import { withFirebaseRequest } from "@/store/firebaseRequestStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AddCustomerManual">;
 // ---- Floating-label Input ----
@@ -107,22 +108,25 @@ const AddCustomerManualScreen: React.FC<Props> = ({ navigation, route }) => {
         contactId,
         name: name,
         phone: phone,
+        disabled: false,
         updatedAt: firestore.Timestamp.now(),
       };
 
       const userRef = firestore().collection("users").doc(currentUser.uid);
-      const wasSaved = await firestore().runTransaction(async (transaction) => {
-        const userSnapshot = await transaction.get(userRef);
-        const savedContacts = userSnapshot.data()?.contact;
-        const contacts = Array.isArray(savedContacts) ? savedContacts : [];
+      const wasSaved = await withFirebaseRequest(() =>
+        firestore().runTransaction(async (transaction) => {
+          const userSnapshot = await transaction.get(userRef);
+          const savedContacts = userSnapshot.data()?.contact;
+          const contacts = Array.isArray(savedContacts) ? savedContacts : [];
 
-        if (contacts.some((savedContact) => savedContact?.contactId === contactId)) {
-          return false;
-        }
+          if (contacts.some((savedContact) => savedContact?.contactId === contactId)) {
+            return false;
+          }
 
-        transaction.set(userRef, { contact: [...contacts, contactDetails] }, { merge: true });
-        return true;
-      });
+          transaction.set(userRef, { contact: [...contacts, contactDetails] }, { merge: true });
+          return true;
+        }),
+      );
 
       router.push("/(tabs)" as any);
     } catch (error) {

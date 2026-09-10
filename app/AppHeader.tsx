@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
 import { router } from "expo-router";
 import auth from "@react-native-firebase/auth";
+import { withFirebaseRequest } from "@/store/firebaseRequestStore";
 
 // Set this to whatever your unread notification count is
 const NOTIFICATION_COUNT = 1;
@@ -27,7 +28,7 @@ export default function AppHeader() {
 
   function handleLogout() {
     setIsProfileOpen(false);
-    auth().signOut();
+    void withFirebaseRequest(() => auth().signOut());
     router.replace("/");
   }
 

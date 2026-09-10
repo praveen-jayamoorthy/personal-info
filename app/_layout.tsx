@@ -10,6 +10,7 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { useAuthStore } from "@/store/authStore";
 import { StatusBar } from "expo-status-bar";
 import AppHeader from "./AppHeader";
+import GlobalFirebaseLoader from "@/components/GlobalFirebaseLoader";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -55,7 +56,7 @@ function RootLayoutNav() {
   const { user, initializing, isRegistered, _init } = useAuthStore();
   const pathname = usePathname();
   const segments = useSegments();
-  const isLoginRoute = segments.length === 1 && segments[0] === "index";
+  const isLoginRoute = pathname === "/" || pathname === "/index";
   const isTabsRoute = segments[0] === "(tabs)";
 
   useEffect(() => {
@@ -101,8 +102,10 @@ function RootLayoutNav() {
         <Stack.Screen name="screen/addCustomerManual" />
         <Stack.Screen name="screen/LedgerScreen" />
         <Stack.Screen name="screen/addTransactionScreen" />
+        <Stack.Screen name="screen/transactionDetailScreen" />
       </Stack>
 
+      <GlobalFirebaseLoader />
       <StatusBar style="auto" />
     </ThemeProvider>
   );

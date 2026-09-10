@@ -3,6 +3,11 @@ import { create } from "zustand";
 import auth, { FirebaseAuthTypes } from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
 import { userDetails } from "./type";
+import {
+  beginFirebaseRequest,
+  endFirebaseRequest,
+  withFirebaseRequest,
+} from "./firebaseRequestStore";
 
 type RegisterProfilePayload = {
   displayName: string;
@@ -20,7 +25,9 @@ type AuthState = {
 };
 
 async function checkUserRegistration(uid: string) {
-  const userDoc = await firestore().collection("users").doc(uid).get();
+  const userDoc = await withFirebaseRequest(() =>
+    firestore().collection("users").doc(uid).get(),
+  );
   return userDoc;
 }
 
@@ -37,15 +44,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     try {
       const userRef = firestore().collection("users").doc(user.uid);
-      await userRef.set({
-        uid: user.uid,
-        displayName: payload.displayName,
-        email: payload.email,
-        photoURL: payload.photoURL || null,
-        phoneNumber: user.phoneNumber || null,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        lastSeen: firestore.FieldValue.serverTimestamp(),
-      });
+      await withFirebaseRequest(() =>
+        userRef.set({
+          uid: user.uid,
+          displayName: payload.displayName,
+          email: payload.email,
+          photoURL: payload.photoURL || null,
+          phoneNumber: user.phoneNumber || null,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          lastSeen: firestore.FieldValue.serverTimestamp(),
+        }),
+      );
       set({ isRegistered: true });
       set({
         userDetails: {
@@ -63,23 +72,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   // Sets up the Firebase auth listener. Call this ONCE at app start.
   _init: () => {
+    beginFirebaseRequest();
+    let isInitialAuthState = true;
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
-      set({ user: firebaseUser });
-
-      if (!firebaseUser) {
-        set({ isRegistered: null, initializing: false });
-        return;
+      if (!isInitialAuthState) {
+        beginFirebaseRequest();
       }
-
+      isInitialAuthState = false;
       try {
-        const userDoc = await checkUserRegistration(firebaseUser.uid);
-        set({ isRegistered: userDoc.exists });
-        set({ userDetails: userDoc.data() as userDetails });
-      } catch (error) {
-        console.error("Failed to verify registration status", error);
-        set({ isRegistered: false });
+        set({ user: firebaseUser });
+
+        if (!firebaseUser) {
+          set({ isRegistered: null, initializing: false });
+          return;
+        }
+
+        try {
+          const userDoc = await checkUserRegistration(firebaseUser.uid);
+          set({ isRegistered: userDoc.exists });
+          set({ userDetails: userDoc.data() as userDetails });
+        } catch (error) {
+          console.error("Failed to verify registration status", error);
+          set({ isRegistered: false });
+        }
       } finally {
         set({ initializing: false });
+        endFirebaseRequest();
       }
     });
 

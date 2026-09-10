@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import auth from "@react-native-firebase/auth";
 import firestore from "@react-native-firebase/firestore";
+import { withFirebaseRequest } from "@/store/firebaseRequestStore";
 
 type ContactListItem = {
   id: string;
@@ -156,22 +157,25 @@ export default function AddCustomerScreen() {
         image: contact.image,
         color: contact.color,
         warning: contact.warning,
+        disabled: false,
         updatedAt: firestore.Timestamp.now(),
       };
 
       const userRef = firestore().collection("users").doc(currentUser.uid);
-      const wasSaved = await firestore().runTransaction(async (transaction) => {
-        const userSnapshot = await transaction.get(userRef);
-        const savedContacts = userSnapshot.data()?.contact;
-        const contacts = Array.isArray(savedContacts) ? savedContacts : [];
+      const wasSaved = await withFirebaseRequest(() =>
+        firestore().runTransaction(async (transaction) => {
+          const userSnapshot = await transaction.get(userRef);
+          const savedContacts = userSnapshot.data()?.contact;
+          const contacts = Array.isArray(savedContacts) ? savedContacts : [];
 
-        if (contacts.some((savedContact) => savedContact?.contactId === contact.id)) {
-          return false;
-        }
+          if (contacts.some((savedContact) => savedContact?.contactId === contact.id)) {
+            return false;
+          }
 
-        transaction.set(userRef, { contact: [...contacts, contactDetails] }, { merge: true });
-        return true;
-      });
+          transaction.set(userRef, { contact: [...contacts, contactDetails] }, { merge: true });
+          return true;
+        }),
+      );
 
       router.push("/(tabs)" as any);
     } catch (error) {

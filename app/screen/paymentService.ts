@@ -1,4 +1,9 @@
 import firestore, { FirebaseFirestoreTypes } from "@react-native-firebase/firestore";
+import {
+  beginFirebaseRequest,
+  endFirebaseRequest,
+  withFirebaseRequest,
+} from "@/store/firebaseRequestStore";
 
 export type TransactionType = "given" | "received";
 
@@ -92,39 +97,41 @@ export async function addPaymentTransaction(
   const userRef = firestore().collection("users").doc(userId);
   const delta = input.type === "given" ? input.amount : -input.amount;
 
-  await firestore().runTransaction(async (transaction) => {
-    const userSnapshot = await transaction.get(userRef);
-    const savedContacts = userSnapshot.data()?.contact;
-    const contacts = Array.isArray(savedContacts) ? savedContacts : [];
-    const updatedContacts = contacts.map((contact) => {
-      if (contact?.contactId !== contactId) return contact;
+  await withFirebaseRequest(() =>
+    firestore().runTransaction(async (transaction) => {
+      const userSnapshot = await transaction.get(userRef);
+      const savedContacts = userSnapshot.data()?.contact;
+      const contacts = Array.isArray(savedContacts) ? savedContacts : [];
+      const updatedContacts = contacts.map((contact) => {
+        if (contact?.contactId !== contactId) return contact;
 
-      return {
-        ...contact,
-        balanceDue: (typeof contact.balanceDue === "number" ? contact.balanceDue : 0) + delta,
-        updatedAt: firestore.Timestamp.now(),
-      };
-    });
+        return {
+          ...contact,
+          balanceDue: (typeof contact.balanceDue === "number" ? contact.balanceDue : 0) + delta,
+          updatedAt: firestore.Timestamp.now(),
+        };
+      });
 
-    transaction.set(transactionRef, {
-      type: input.type,
-      amount: input.amount,
-      addedBy: input.addedBy,
-      note: input.note ?? "",
-      billDate: input.billDate ? firestore.Timestamp.fromDate(input.billDate) : null,
-      createdAt: firestore.FieldValue.serverTimestamp(),
-    });
-    transaction.set(
-      contactRef,
-      {
-        name: contactName,
-        balanceDue: firestore.FieldValue.increment(delta),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
-    transaction.set(userRef, { contact: updatedContacts }, { merge: true });
-  });
+      transaction.set(transactionRef, {
+        type: input.type,
+        amount: input.amount,
+        addedBy: input.addedBy,
+        note: input.note ?? "",
+        billDate: input.billDate ? firestore.Timestamp.fromDate(input.billDate) : null,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+      transaction.set(
+        contactRef,
+        {
+          name: contactName,
+          balanceDue: firestore.FieldValue.increment(delta),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      transaction.set(userRef, { contact: updatedContacts }, { merge: true });
+    }),
+  );
 
   return transactionRef.id;
 }
@@ -133,8 +140,30 @@ export async function getPaymentTransactions(
   userId: string,
   contactId: string,
 ): Promise<PaymentTransaction[]> {
-  const snapshot = await transactionsColRef(userId, contactId).orderBy("createdAt", "asc").get();
+  const snapshot = await withFirebaseRequest(() =>
+    transactionsColRef(userId, contactId).orderBy("createdAt", "asc").get(),
+  );
   return snapshot.docs.map(toPaymentTransaction);
+}
+
+export async function disableContact(userId: string, contactId: string): Promise<void> {
+  if (!userId || !contactId) {
+    throw new Error("A signed-in user and contact are required.");
+  }
+
+  const userRef = firestore().collection("users").doc(userId);
+  await withFirebaseRequest(() =>
+    firestore().runTransaction(async (transaction) => {
+      const userSnapshot = await transaction.get(userRef);
+      const savedContacts = userSnapshot.data()?.contact;
+      const contacts = Array.isArray(savedContacts) ? savedContacts : [];
+      const updatedContacts = contacts.map((contact) =>
+        contact?.contactId === contactId ? { ...contact, disabled: true } : contact,
+      );
+
+      transaction.set(userRef, { contact: updatedContacts }, { merge: true });
+    }),
+  );
 }
 
 export function listenToPaymentTransactions(
@@ -143,19 +172,36 @@ export function listenToPaymentTransactions(
   onChange: (transactions: PaymentTransaction[]) => void,
   onError?: (error: Error) => void,
 ): () => void {
-  return transactionsColRef(userId, contactId)
-    .orderBy("createdAt", "asc")
-    .onSnapshot(
-      (snapshot) => onChange(snapshot.docs.map(toPaymentTransaction)),
-      (error) => onError?.(error),
-    );
+  try {
+    return transactionsColRef(userId, contactId)
+      .orderBy("createdAt", "asc")
+      .onSnapshot(
+        (snapshot) => {
+          beginFirebaseRequest();
+          try {
+            onChange(snapshot.docs.map(toPaymentTransaction));
+          } finally {
+            endFirebaseRequest();
+          }
+        },
+        (error) => {
+          beginFirebaseRequest();
+          endFirebaseRequest();
+          onError?.(error);
+        },
+      );
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function getContactSummary(
   userId: string,
   contactId: string,
 ): Promise<ContactSummary | null> {
-  return toContactSummary(await contactDocRef(userId, contactId).get());
+  return toContactSummary(
+    await withFirebaseRequest(() => contactDocRef(userId, contactId).get()),
+  );
 }
 
 export function listenToContactSummary(
@@ -164,10 +210,25 @@ export function listenToContactSummary(
   onChange: (summary: ContactSummary | null) => void,
   onError?: (error: Error) => void,
 ): () => void {
-  return contactDocRef(userId, contactId).onSnapshot(
-    (snapshot) => onChange(toContactSummary(snapshot)),
-    (error) => onError?.(error),
-  );
+  try {
+    return contactDocRef(userId, contactId).onSnapshot(
+      (snapshot) => {
+        beginFirebaseRequest();
+        try {
+          onChange(toContactSummary(snapshot));
+        } finally {
+          endFirebaseRequest();
+        }
+      },
+      (error) => {
+        beginFirebaseRequest();
+        endFirebaseRequest();
+        onError?.(error);
+      },
+    );
+  } catch (error) {
+    throw error;
+  }
 }
 
 export function listenToAllContacts(
@@ -175,20 +236,34 @@ export function listenToAllContacts(
   onChange: (contacts: ContactSummary[]) => void,
   onError?: (error: Error) => void,
 ): () => void {
-  return firestore()
-    .collection("users")
-    .doc(userId)
-    .collection("contact")
-    .orderBy("updatedAt", "desc")
-    .onSnapshot(
-      (snapshot) =>
-        onChange(
-          snapshot.docs
-            .map(toContactSummary)
-            .filter((item): item is ContactSummary => item !== null),
-        ),
-      (error) => onError?.(error),
-    );
+  try {
+    return firestore()
+      .collection("users")
+      .doc(userId)
+      .collection("contact")
+      .orderBy("updatedAt", "desc")
+      .onSnapshot(
+        (snapshot) => {
+          beginFirebaseRequest();
+          try {
+            onChange(
+              snapshot.docs
+                .map(toContactSummary)
+                .filter((item): item is ContactSummary => item !== null),
+            );
+          } finally {
+            endFirebaseRequest();
+          }
+        },
+        (error) => {
+          beginFirebaseRequest();
+          endFirebaseRequest();
+          onError?.(error);
+        },
+      );
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function deletePaymentTransaction(
@@ -206,5 +281,34 @@ export async function deletePaymentTransaction(
     balanceDue: firestore.FieldValue.increment(reversal),
     updatedAt: firestore.FieldValue.serverTimestamp(),
   });
-  await batch.commit();
+  await withFirebaseRequest(() => batch.commit());
+}
+
+export async function updatePaymentTransaction(
+  userId: string,
+  contactId: string,
+  transaction: PaymentTransaction,
+  amount: number,
+): Promise<void> {
+  if (!userId || !contactId) {
+    throw new Error("A signed-in user and contact are required.");
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Amount must be greater than zero.");
+  }
+
+  const contactRef = contactDocRef(userId, contactId);
+  const transactionRef = transactionsColRef(userId, contactId).doc(transaction.id);
+  const direction = transaction.type === "given" ? 1 : -1;
+  const balanceDelta = (amount - transaction.amount) * direction;
+
+  await withFirebaseRequest(() =>
+    firestore().runTransaction(async (transactionWriter) => {
+      transactionWriter.update(transactionRef, { amount });
+      transactionWriter.update(contactRef, {
+        balanceDue: firestore.FieldValue.increment(balanceDelta),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
+    }),
+  );
 }
