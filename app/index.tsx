@@ -20,9 +20,12 @@ const Login = () => {
   }, [pathname, router]);
 
   // Handle the button press
-  async function signInWithPhoneNumber() {
+  async function doSignInWithPhoneNumber() {
+    const formattedPhoneNumber = phoneNumber.startsWith("+")
+  ? phoneNumber
+  : `+91${phoneNumber}`;
     const confirmation = await withFirebaseRequest(() =>
-      auth().signInWithPhoneNumber(phoneNumber),
+      auth().signInWithPhoneNumber(formattedPhoneNumber),
     );
     setConfirm(confirmation);
   }
@@ -56,7 +59,7 @@ const Login = () => {
           <TextInput
             value={phoneNumber}
             onChangeText={setPhoneNumber}
-            placeholder="+91 00000 00000"
+            placeholder="00000 00000"
             keyboardType="phone-pad"
             style={{
               borderWidth: 1,
@@ -67,7 +70,7 @@ const Login = () => {
             }}
           />
           <TouchableOpacity
-            onPress={signInWithPhoneNumber}
+            onPress={doSignInWithPhoneNumber}
             disabled={loading}
             style={{
               backgroundColor: "#000",

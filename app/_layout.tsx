@@ -1,7 +1,7 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { router, Stack, usePathname, useSegments } from "expo-router";
+import { router, Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
@@ -55,9 +55,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { user, initializing, isRegistered, _init } = useAuthStore();
   const pathname = usePathname();
-  const segments = useSegments();
   const isLoginRoute = pathname === "/" || pathname === "/index";
-  const isTabsRoute = segments[0] === "(tabs)";
 
   useEffect(() => {
     return _init();
@@ -67,8 +65,8 @@ function RootLayoutNav() {
     if (initializing) {
       return;
     }
-
-    if (!user && !isLoginRoute) {
+    console.log("testing", user, isLoginRoute);
+    if (!user) {
       console.log("User not authenticated, redirecting to login");
       router.replace("/");
       return;
@@ -79,12 +77,12 @@ function RootLayoutNav() {
       return;
     }
 
-/*     if (user && isRegistered === true && !isTabsRoute) {
+    if (user && isRegistered === true && isLoginRoute) {
       console.log("User redirecting to /tabs");
 
       router.replace("/(tabs)");
-    } */
-  }, [initializing, isLoginRoute, isRegistered, isTabsRoute, pathname, user]);
+    }
+  }, [initializing, isLoginRoute, isRegistered, pathname, user]);
 
   //   }, [initializing, isLoginRoute, isRegistered, user]);
 
@@ -102,7 +100,7 @@ function RootLayoutNav() {
         <Stack.Screen name="screen/addCustomerManual" />
         <Stack.Screen name="screen/LedgerScreen" />
         <Stack.Screen name="screen/addTransactionScreen" />
-        <Stack.Screen name="screen/transactionDetailScreen" />
+        <Stack.Screen name="screen/Transactiondetailscreen" />
       </Stack>
 
       <GlobalFirebaseLoader />

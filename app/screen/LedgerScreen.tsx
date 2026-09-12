@@ -322,7 +322,7 @@ export default function LedgerScreen() {
                     entry={entry}
                     onPress={() =>
                       router.push({
-                        pathname: "/screen/transactionDetailScreen" as never,
+                        pathname: "/screen/Transactiondetailscreen" as never,
                         params: {
                           contactId,
                           contactName,
